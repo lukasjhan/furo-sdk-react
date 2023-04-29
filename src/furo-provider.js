@@ -3,7 +3,7 @@ import FuroClient from './FuroClient';
 import FuroContext from './furo-context';
 import { reducer as FuroReducer, initialState } from './reducer';
 import { hasAuthParams } from './utils';
-import { Buffer } from "buffer";
+import { Buffer } from 'buffer';
 
 const defaultOnRedirectCallback = (appState, opts) => {
   window.history.replaceState(
@@ -25,7 +25,6 @@ const toFuroClientOptions = (opts) => {
     max_age: maxAge,
     furoClient: {
       name: 'furo-react',
-      // version: __VERSION__,
     },
   };
 };
@@ -41,39 +40,30 @@ const FuroProvider = (opts) => {
     onRedirectCallback = defaultOnRedirectCallback,
     ...clientOpts
   } = opts;
-  // initialize Furo Client
-  // const client = new FuroClient({ domain, clientId, redirectUri });
   const [client] = useState(
     () => new FuroClient(toFuroClientOptions(clientOpts)),
   );
-  // initialize Reducer
   const [state, dispatch] = useReducer(FuroReducer, initialState);
 
-  // check
   useEffect(() => {
-      const init = async () => {
+    const init = async () => {
       try {
-        // check if url has auth params
         if (hasAuthParams() && !skipRedirectCallback) {
-          // const { appState } = await client.handleRedirectCallback();
-          // onRedirectCallback(appState);
           await client.handleRedirectCallback();
           onRedirectCallback({}, opts);
         } else {
-          // check if the user is stored in storage. Lock the tab and load the user info
-          // await client.checkSession();
           console.log(`Getting token from storage... Checking Sessions`);
         }
         const user = await client.getUser();
-        if(!user) logout();
+        if (!user) logout();
         dispatch({ type: 'INITIALISED', user });
       } catch (error) {
         console.error(error);
         try {
-          const {access_token, refresh_token} = await client.refreshTokenSilently();
+          const { access_token, refresh_token } =
+            await client.refreshTokenSilently();
           if (access_token && refresh_token) init();
         } catch (error) {
-        // normalize error instance later error: loginError(error);
           dispatch({ type: 'ERROR', error: error });
         }
       }
@@ -96,8 +86,6 @@ const FuroProvider = (opts) => {
     [client],
   );
 
-  // const loginWithPopup =
-
   const loginWithKakao = useCallback(
     (opts) => client.loginWithKakao(toFuroLoginRedirectOptions(opts)),
     [client],
@@ -114,56 +102,33 @@ const FuroProvider = (opts) => {
       localStorage.removeItem(`furo-${client.clientId}-token`);
       sessionStorage.removeItem(`furo-${client.clientId}-token`);
       dispatch({ type: 'LOGOUT' });
-      // const maybePromise = client.logout(opts);
-      // if (opts.localOnly) {
-      //   if (maybePromise && typeof maybePromise.then === 'function') {
-      //     return maybePromise.then(() => dispatch({ type: 'LOGOUT' }));
-      //   }
-      //   dispatch({ type: 'LOGOUT' });
-      // }
-      // return maybePromise
     },
     [client],
   );
 
   const getAccessTokenSilently = useCallback(
     async (opts, config) => {
-      // let token;
-      // try {
-      //   token = await client.getTokenWithPopup(opts, config);
-      // } catch (error) {
-      //   // define type for errors later e.g.) tokenError(error)
-      //   throw error;
-      // } finally {
-      //   dispatch({
-      //     type: 'GET_ACCESS_TOKEN_COMPLETE',
-      //     user: await client.getUser(),
-      //   });
-      // }
       const token = await localStorage.getItem(`furo-${client.clientId}-token`);
       const payloadBase64 = token.split('.')[1];
       const decodedJson = Buffer.from(payloadBase64, 'base64').toString();
       const decoded = JSON.parse(decodedJson);
       const exp = decoded.exp;
-      if(!exp) return token;
-      const expired = (Date.now() >= exp * 1000)
-      if(!expired) return token;
+      if (!exp) return token;
+      const expired = Date.now() >= exp * 1000;
+      if (!expired) return token;
       else {
-        const { access_token: token } = await refreshTokenSilently()
+        const { access_token: token } = await refreshTokenSilently();
         return token;
       }
     },
     [client],
   );
 
-  // const getIdTokenClaims =
-
   const handleRedirectCallback = useCallback(
     async (url) => {
       try {
         return await client.handleRedirectCallback(url);
       } catch (error) {
-        // define type for errors later e.g.) tokenError(error)
         throw error;
       } finally {
         dispatch({
@@ -182,11 +147,8 @@ const FuroProvider = (opts) => {
         buildAuthorizeUrl,
         buildLogoutUrl,
         getAccessTokenSilently,
-        // getAccessTokenWithPopup,
-        // getIdTokenClaims,
         refreshTokenSilently,
         loginWithRedirect,
-        // loginWithPopup,
         loginWithKakao,
         logout,
         handleRedirectCallback,
